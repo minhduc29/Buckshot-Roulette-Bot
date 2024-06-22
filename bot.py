@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 
 
-class DuckShotBot(commands.Bot):
+class DuckshotBot(commands.Bot):
     def __init__(self, prefix, intents, guild_id=None):
         """Initialize the Discord bot"""
         super().__init__(command_prefix=prefix, intents=intents)
