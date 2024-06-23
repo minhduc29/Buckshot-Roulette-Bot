@@ -1,5 +1,6 @@
 from bot import *
 from menus import *
+from game import *
 from config import TOKEN, GUILD_ID
 
 # Declare intents
@@ -22,7 +23,7 @@ async def challenge(interaction: discord.Interaction, player: discord.Member):
     else:  # Valid opponent
         view = YesNoMenu(player)  # Buttons
         embed = discord.Embed(
-            colour=discord.Colour.dark_purple(),
+            colour=discord.Colour.purple(),
             title="Duckshot Challenge",
             description=f"**{author.display_name}** challenged **{player.display_name}** in a gun fight!"
                         f"\n\nDo you accept this challenge?")
@@ -32,14 +33,18 @@ async def challenge(interaction: discord.Interaction, player: discord.Member):
         res = await view.wait()  # Check to see if the user reaches timeout
 
         # Disable all buttons
-        for btn in view.children:
-            btn.disabled = True
+        view.disable_buttons()
         await interaction.edit_original_response(view=view)
 
         if res:  # User ran out of time
-            await interaction.followup.send("You ran out of time to decide. The challenge is cancelled!")
-        else:  # User accepted the challenge
-            pass
+            await interaction.followup.send(f"**{player.display_name}** ran out of time to decide. "
+                                            f"The challenge is cancelled!")
+        else:  # User chose a button
+            if view.value:  # User chose Yes
+                p1 = Player(3, interaction.user)
+                p2 = Player(3, player)
+                game = Game(p1, p2)
+                await game.basic_game(interaction)
 
 # Run the bot
 bot.run(TOKEN)
