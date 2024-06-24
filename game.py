@@ -1,5 +1,6 @@
 import random
 import discord
+from discord.ext import commands
 from player import Player
 from menus import ShootMenu
 from asyncio import sleep
@@ -26,11 +27,15 @@ class Game:
         # Represents the gun with all the bullets loaded
         self.gun = ['r' for _ in range(self.red_bullet)] + ['b' for _ in range(self.blue_bullet)]
 
-    async def basic_game(self, interaction: discord.Interaction):
+    async def basic_game(self, interaction_ctx: discord.Interaction | commands.Context):
         """Simulate the basic game"""
         self.first_mover()  # Decide the first player to move
         bullet_embed = self.bullet_display()  # Representation of the bullets
-        display_msg = await interaction.followup.send(embed=bullet_embed)  # Display the bullets
+        # Display the bullets
+        if isinstance(interaction_ctx, discord.Interaction):  # If it's interaction
+            display_msg = await interaction_ctx.followup.send(embed=bullet_embed)
+        else:  # If it's context
+            display_msg = await interaction_ctx.channel.send(embed=bullet_embed)
         await sleep(5)
         random.shuffle(self.gun)  # Shuffle all the bullets
 
@@ -60,8 +65,14 @@ class Game:
             await sleep(2)
 
             if res:  # User ran out of time
-                await interaction.followup.send(f"**{current_player.profile.display_name}** lost due to inactivity!")
-                await interaction.followup.send(embed=self.winner_display(opponent))
+                if isinstance(interaction_ctx, discord.Interaction):
+                    await interaction_ctx.followup.send(
+                        f"**{current_player.profile.display_name}** lost due to inactivity!")
+                    await interaction_ctx.followup.send(embed=self.winner_display(opponent))
+                else:
+                    await interaction_ctx.channel.send(
+                        f"**{current_player.profile.display_name}** lost due to inactivity!")
+                    await interaction_ctx.channel.send(embed=self.winner_display(opponent))
                 self.over = True
             else:  # User chose a button
                 bullet = self.gun.pop(0)
@@ -75,14 +86,20 @@ class Game:
                     if bullet == 'r':  # If the bullet is red
                         current_player.lives -= 1  # User lost 1 life
                         if current_player.lives == 0:  # If user dies
-                            await interaction.followup.send(embed=self.winner_display(opponent))
+                            if isinstance(interaction_ctx, discord.Interaction):
+                                await interaction_ctx.followup.send(embed=self.winner_display(opponent))
+                            else:
+                                await interaction_ctx.channel.send(embed=self.winner_display(opponent))
                             self.over = True  # Game over
                         self.change_turn()
                 else:  # User chose to shoot their opponent
                     if bullet == 'r':
                         opponent.lives -= 1
                         if opponent.lives == 0:
-                            await interaction.followup.send(embed=self.winner_display(current_player))
+                            if isinstance(interaction_ctx, discord.Interaction):
+                                await interaction_ctx.followup.send(embed=self.winner_display(current_player))
+                            else:
+                                await interaction_ctx.channel.send(embed=self.winner_display(current_player))
                             self.over = True
                     self.change_turn()
 

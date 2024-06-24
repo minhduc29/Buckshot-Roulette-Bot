@@ -19,7 +19,8 @@ async def challenge(interaction: discord.Interaction, player: discord.Member):
     if player.bot:
         await interaction.response.send_message("You cannot challenge a bot!")
     elif player.id == author.id:
-        await interaction.response.send_message("Do you really want to kys? :face_with_raised_eyebrow: I don't think so")
+        await interaction.response.send_message(
+            "Do you really want to kys? :face_with_raised_eyebrow: I don't think so")
     else:  # Valid opponent
         view = YesNoMenu(player)  # Buttons
         embed = discord.Embed(
@@ -45,6 +46,44 @@ async def challenge(interaction: discord.Interaction, player: discord.Member):
                 p2 = Player(3, player)
                 game = Game(p1, p2)
                 await game.basic_game(interaction)
+
+
+@bot.command(name="challenge")
+async def prf_challenge(ctx: commands.Context,
+                        player: discord.Member = commands.parameter(description="The user that you want to challenge")):
+    """
+    Challenge another user in a gun fight with you
+    This command is similar to /challenge
+    """
+    # This function use the exact same logic like the challenge() function
+    if player.bot:
+        await ctx.channel.send("You cannot challenge a bot!")
+    elif player.id == ctx.author.id:
+        await ctx.channel.send("Do you really want to kys? :face_with_raised_eyebrow: I don't think so")
+    else:  # Valid opponent
+        view = YesNoMenu(player)  # Buttons
+        embed = discord.Embed(
+            colour=discord.Colour.purple(),
+            title="Duckshot Challenge",
+            description=f"**{ctx.author.display_name}** challenged **{player.display_name}** in a gun fight!"
+                        f"\n\nDo you accept this challenge?")
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar.url)
+        display_msg = await ctx.channel.send(embed=embed, view=view)  # The display message
+
+        res = await view.wait()  # Check to see if the user reaches timeout
+
+        # Disable all buttons
+        view.disable_buttons()
+        await display_msg.edit(view=view)
+
+        if res:  # User ran out of time
+            await ctx.channel.send(f"**{player.display_name}** ran out of time to decide. The challenge is cancelled!")
+        else:  # User chose a button
+            if view.value:  # User chose Yes
+                p1 = Player(3, ctx.author)
+                p2 = Player(3, player)
+                game = Game(p1, p2)
+                await game.basic_game(ctx)
 
 # Run the bot
 bot.run(TOKEN)
