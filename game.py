@@ -14,6 +14,17 @@ class Game:
         self.p2 = p2  # Player 2
         self.bullet_number = random.randint(2, 8)  # Number of bullets
         self.over = False  # State of the game
+        self.item = {
+            "Expired Medicine": "Heal 2 :heart: LIFE or lose 1 :heart: LIFE",
+            "Inverter": "Switch the color of the bullet",
+            "Cigarette": "Heal 1 :heart: LIFE",
+            "Burner Phone": "Reveal the color of a random bullet",
+            "Adrenaline": "Steal an item from your opponent",
+            "Magnifying Glass": "Reveal the color of the current bullet",
+            "Beer": "Eject the current bullet",
+            "Hand Saw": "Double the damage of the next shot",
+            "Handcuffs": "Force your opponent to skip their next turn"
+        }
 
         # Number of red bullets
         if self.bullet_number < 4:
@@ -142,7 +153,7 @@ class Game:
         for bullet in self.gun:
             bullet_str += ":red_square: " if bullet == 'r' else ":blue_square: "
         return discord.Embed(
-            colour=discord.Colour.dark_gold(),
+            colour=discord.Colour.gold(),
             title="Bullets in the gun",
             description=bullet_str
         )
@@ -177,4 +188,14 @@ class Game:
             description=f"\nChallenge is over!\n\nThe winner is **{winner.profile.display_name}**"
         )
         embed.set_thumbnail(url=winner.profile.display_avatar.url)
+        return embed
+
+    def challenge_display(self):
+        """Create an embed to display the challenge message"""
+        embed = discord.Embed(
+            colour=discord.Colour.purple(),
+            title="Duckshot Challenge",
+            description=f"**{self.p1.profile.display_name}** challenged **{self.p2.profile.display_name}** "
+                        f"in a gun fight!\n\nDo you accept this challenge?")
+        embed.set_author(name=self.p1.profile.display_name, icon_url=self.p1.profile.display_avatar.url)
         return embed
