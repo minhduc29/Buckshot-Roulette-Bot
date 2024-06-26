@@ -91,9 +91,9 @@ async def prf_challenge(ctx: commands.Context, player: discord.Member):
 
 # Item information for the 2 functions below
 item = {
-    "Expired Medicine": "Heal 2 :heart: LIFE or lose 1 :heart: LIFE",
+    "Expired Medicine": "Heal 2 :heart: LIFE or lose 1 :heart: LIFE but not more than your initial LIFE",
     "Inverter": "Switch the color of the bullet",
-    "Cigarette": "Heal 1 :heart: LIFE",
+    "Cigarette": "Heal 1 :heart: LIFE but not more than your initial LIFE",
     "Burner Phone": "Reveal the color of a random bullet",
     "Adrenaline": "Steal an item from your opponent",
     "Magnifying Glass": "Reveal the color of the current bullet",
