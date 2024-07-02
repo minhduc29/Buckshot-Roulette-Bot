@@ -1,3 +1,4 @@
+import random
 import discord
 
 
@@ -20,3 +21,20 @@ class Player:
             "Handcuffs": 0
         }
         self.profile = user  # User information
+
+    def item_num(self):
+        """Return number of items"""
+        return sum(self.items.values())
+
+    def reload_item(self):
+        """Randomize items for the player"""
+        cur_item = self.item_num()
+        if cur_item >= 8:
+            return
+        elif cur_item > 4:
+            num = 8 - cur_item
+        else:
+            num = 4
+        for i in range(num):
+            item = random.choice(list(self.items))
+            self.items[item] += 1

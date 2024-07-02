@@ -14,7 +14,7 @@ class Game:
         self.p2 = p2  # Player 2
         self.bullet_number = random.randint(2, 8)  # Number of bullets
         self.over = False  # State of the game
-        self.item = {
+        self.item_info = {
             "Expired Medicine": "Heal 2 LIFE or lose 1 LIFE but not more than your initial LIFE",
             "Inverter": "Switch the color of the bullet",
             "Cigarette": "Heal 1 LIFE but not more than your initial LIFE",
@@ -38,7 +38,7 @@ class Game:
         # Represents the gun with all the bullets loaded
         self.gun = ['r' for _ in range(self.red_bullet)] + ['b' for _ in range(self.blue_bullet)]
 
-    async def basic_game(self, interaction_ctx: discord.Interaction | commands.Context):
+    async def basic_game(self, interaction_ctx: discord.Interaction | commands.Context, advanced=False):
         """Simulate the basic game"""
         self.first_mover()  # Decide the first player to move
         bullet_embed = self.bullet_display()  # Representation of the bullets
@@ -49,22 +49,39 @@ class Game:
             display_msg = await interaction_ctx.channel.send(embed=bullet_embed)
         await sleep(5)
         random.shuffle(self.gun)  # Shuffle all the bullets
+        bullet_index = 0  # The current bullet of the gun
+        if advanced:  # Load items for players if the game mode is advanced
+            self.p1.reload_item()
+            self.p2.reload_item()
 
         while not self.over:  # If the game is not over
             current_player = self.p1 if self.p1.turn else self.p2  # Player to move
             opponent = self.p2 if current_player == self.p1 else self.p1  # Player not to move
 
+            # Description of the embed
+            description = f"**{current_player.profile.display_name}**\n:heart: **LIFE**: {current_player.lives}"
+            if advanced:
+                description += "\n\n**ITEMS**:"
+                for item, amount in current_player.items.items():
+                    if amount:
+                        description += f"\n**{item}** x{amount}"
+            description += f"\n\n**{opponent.profile.display_name}**\n:heart: **LIFE**: {opponent.lives}"
+            if advanced:
+                description += "\n\n**ITEMS**:"
+                for item, amount in opponent.items.items():
+                    if amount:
+                        description += f"\n**{item}** x{amount}"
+
             # Main representation of the game
             embed = discord.Embed(
                 colour=discord.Colour.from_str("#ff2c55") if current_player == self.p1
                 else discord.Colour.from_str("#6ac5fe"),
-                description=f"**{current_player.profile.display_name}**\n:heart: **LIFE**: {current_player.lives}"
-                            f"\n\n**{opponent.profile.display_name}**\n:heart: **LIFE**: {opponent.lives}"
+                description=description
             )
             embed.set_author(name=f"{current_player.profile.display_name}'s turn",
                              icon_url=current_player.profile.display_avatar.url)
 
-            view = ShootMenu(current_player.profile.id)  # Shoot buttons
+            view = ShootMenu(current_player.profile.id, self.item_info, current_player.items)  # Shoot buttons
 
             await display_msg.edit(embed=embed, view=view)  # Edit the original embed
 
@@ -86,12 +103,19 @@ class Game:
                     await interaction_ctx.channel.send(embed=self.winner_display(opponent))
                 self.over = True
             else:  # User chose a button
-                bullet = self.gun.pop(0)
-                self.bullet_number -= 1
+                bullet = self.gun[bullet_index]
+                if view.selected is None:
+                    bullet_index += 1
+                    self.bullet_number -= 1
 
-                await display_msg.edit(embed=self.round_display(bullet, view.shot_yourself, current_player, opponent),
-                                       view=None)  # Display the result of the round
+                await display_msg.edit(
+                    embed=self.round_display(bullet, view.shot_yourself, view.selected, current_player, opponent),
+                    view=None)  # Display the result of the round
                 await sleep(5)
+
+                if view.selected:  # User chose to use an item
+                    current_player.items[view.selected] -= 1  # Remove that item after used
+                    continue  # Skip all the actions below
 
                 if view.shot_yourself:  # User chose to shoot himself
                     if bullet == 'r':  # If the bullet is red
@@ -117,10 +141,13 @@ class Game:
                 # Reload the gun if it runs out of bullets and the game is not over
                 if self.bullet_number == 0 and not self.over:
                     self.reload()
-                    bullet_embed = self.bullet_display()
-                    await display_msg.edit(embed=bullet_embed)
+                    await display_msg.edit(embed=self.bullet_display())
                     await sleep(5)
                     random.shuffle(self.gun)
+                    bullet_index = 0
+                    if advanced:
+                        self.p1.reload_item()
+                        self.p2.reload_item()
 
     def reload(self):
         """Reload the gun with a new set of bullets"""
@@ -158,8 +185,16 @@ class Game:
             description=bullet_str
         )
 
-    def round_display(self, bullet, shot_yourself, player: Player, opponent: Player):
+    def round_display(self, bullet, shot_yourself, selected_item, player: Player, opponent: Player):
         """Create an embed to display the result of the round"""
+        if selected_item:  # If user chose to use an item
+            description = f"**{player.profile.display_name} used {selected_item}.**"
+            # TODO: Add more details to this description
+            return discord.Embed(
+                colour=discord.Colour.gold(),
+                title=f"You used an item",
+                description=description
+            )
         tobe = "is" if self.bullet_number == 1 else "are"  # Grammar
         if bullet == "r":  # If the bullet is red
             if shot_yourself:  # If the player chose to shoot himself
