@@ -2,7 +2,7 @@ import random
 import discord
 from discord.ext import commands
 from player import Player
-from menus import ShootMenu
+from menus import ShootMenu, StealMenu
 from asyncio import sleep
 
 
@@ -96,14 +96,14 @@ class Game:
 
             await display_msg.edit(embed=embed, view=view)  # Edit the original embed
 
-            res = await view.wait()  # Check to see if the user reaches timeout
+            timed_out = await view.wait()  # Check to see if the user reaches timeout
 
             # Disable all buttons
             view.disable_buttons()
             await display_msg.edit(view=view)
             await sleep(2)
 
-            if res:  # User ran out of time
+            if timed_out:  # User ran out of time
                 if isinstance(interaction_ctx, discord.Interaction):
                     await interaction_ctx.followup.send(
                         f"**{current_player.profile.display_name}** lost due to inactivity!")
@@ -120,7 +120,8 @@ class Game:
                     self.bullet_number -= 1
 
                 # Result of using an item
-                item_description = self.use_item(view.selected, current_player) if view.selected else ""
+                item_description = await self.use_item(view.selected, current_player, opponent, interaction_ctx)\
+                    if view.selected else ""
 
                 await display_msg.edit(
                     embed=self.round_display(bullet, view.shot_yourself, view.selected, item_description,
@@ -239,7 +240,8 @@ class Game:
         embed.set_author(name=self.p1.profile.display_name, icon_url=self.p1.profile.display_avatar.url)
         return embed
 
-    def use_item(self, item, player: Player):
+    async def use_item(self, item, player: Player, opponent: Player,
+                       interaction_ctx: discord.Interaction | commands.Context):
         """Process the item selected by the player"""
         player.items[item] -= 1  # Remove that item after used
         if item == "Expired Medicine":
@@ -251,7 +253,38 @@ class Game:
         elif item == "Burner Phone":
             pass
         elif item == "Adrenaline":
-            pass
+            view = StealMenu(player.profile.id, self.item_info, opponent.items)
+            embed = discord.Embed(
+                colour=discord.Colour.from_str("#ff2c55") if player == self.p1
+                else discord.Colour.from_str("#6ac5fe"),
+                description=f"**{player.profile.display_name}** is choosing an item to steal."
+            )
+
+            # Display the message for user to choose an item to steal
+            if isinstance(interaction_ctx, discord.Interaction):
+                steal_msg = await interaction_ctx.followup.send(embed=embed, view=view)
+            else:
+                steal_msg = await interaction_ctx.channel.send(embed=embed, view=view)
+
+            timed_out = await view.wait()
+            if timed_out:  # User ran out of time
+                await steal_msg.delete()
+                if isinstance(interaction_ctx, discord.Interaction):
+                    await interaction_ctx.followup.send(
+                        f"**{player.profile.display_name}** lost due to inactivity!")
+                    await interaction_ctx.followup.send(embed=self.winner_display(opponent))
+                else:
+                    await interaction_ctx.channel.send(
+                        f"**{player.profile.display_name}** lost due to inactivity!")
+                    await interaction_ctx.channel.send(embed=self.winner_display(opponent))
+                self.over = True
+                result = f"**{player.profile.display_name}** ran out of time to choose."
+            else:  # User chose an item to steal
+                chosen_item = view.selected
+                await steal_msg.delete()
+                player.items[chosen_item] += 1
+                opponent.items[chosen_item] -= 1
+                result = f"**{player.profile.display_name}** chose to steal a(n) **{chosen_item}**."
         elif item == "Magnifying Glass":
             color = ":red_square: **RED**" if self.gun[self.bullet_index] == "r" else ":blue_square: **BLUE**"
             result = f"The current bullet's color is {color}."

@@ -37,7 +37,7 @@ class ShootMenu(discord.ui.View):
         self.shot_yourself = None
         self.selected = None
         if item_info and player_item:
-            item_menu = ItemMenu(item_info, player_item, player_id, self)
+            item_menu = ItemMenu(item_info, player_item, player_id, self, False)
             if item_menu.options:  # Add select menu if player has items to use
                 self.add_item(item_menu)
 
@@ -63,20 +63,34 @@ class ShootMenu(discord.ui.View):
             button.disabled = True
 
 
+class StealMenu(discord.ui.View):
+    def __init__(self, player_id, item_info, opponent_item):
+        super().__init__()
+        self.player_id = player_id
+        self.selected = None
+        item_menu = ItemMenu(item_info, opponent_item, player_id, self, True)
+        if item_menu.options:  # Add select menu if player has items to use
+            self.add_item(item_menu)
+
+
 class ItemMenu(discord.ui.Select):
-    def __init__(self, item_info, player_item, player_id, view: discord.ui.View):
+    def __init__(self, item_info, player_item, player_id, view: discord.ui.View, steal_menu):
         super().__init__(placeholder="Choose an item to use")
         self.item_info = item_info  # Description of items
         self.player_item = player_item  # Items that the player have
         self.player_id = player_id  # The player that can select the item
         self.parent = view  # The parent view component above this select menu
-        self.add_items()  # Add all player items as options to this select menu
+        self.add_items(steal_menu)  # Add all player items as options to this select menu
 
-    def add_items(self):
+    def add_items(self, steal_menu):
         """Add player items as options to this select menu"""
         for item in self.item_info:
             if self.player_item[item]:  # If player has this item
-                self.add_option(label=item, description=self.item_info[item])
+                if steal_menu:  # If this menu is to steal an item from the opponent
+                    if item != "Adrenaline":
+                        self.add_option(label=item, description=self.item_info[item])
+                else:
+                    self.add_option(label=item, description=self.item_info[item])
 
     async def callback(self, interaction: discord.Interaction):
         """Event handler when the player selects an item to use"""
