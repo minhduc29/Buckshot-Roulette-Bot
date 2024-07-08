@@ -89,17 +89,17 @@ async def prf_challenge(ctx: commands.Context, player: discord.Member):
             if view.value:  # User chose Yes
                 await game.basic_game(ctx)
 
-
 # Item information for the 2 functions below
 item = {
-    "Expired Medicine": "Heal 2 :heart: LIFE or lose 1 :heart: LIFE but not more than your initial LIFE",
-    "Inverter": "Switch the color of all bullets",
-    "Cigarette": "Heal 1 :heart: LIFE but not more than your initial LIFE",
-    "Burner Phone": "Reveal the color of a random bullet",
-    "Adrenaline": "Steal an item from your opponent",
-    "Magnifying Glass": "Reveal the color of the current bullet",
-    "Beer": "Eject the current bullet",
-    "Hand Saw": "Double the damage of the next shot",
+    "Expired Medicine": "Heal 1 - 2 :heart: **LIFE** or lose 1 :heart: **LIFE** but not more than your "
+                        "initial :heart: **LIFE**\n",
+    "Inverter": "Switch the color of all bullets\n",
+    "Cigarette": "Heal 1 :heart: **LIFE** but not more than your initial :heart: **LIFE**\n",
+    "Burner Phone": "Reveal the color of a random bullet\n",
+    "Adrenaline": "Steal an item from your opponent\n",
+    "Magnifying Glass": "Reveal the color of the current bullet\n",
+    "Beer": "Eject the current bullet\n",
+    "Hand Saw": "Double the damage of the next shot\n",
     "Handcuffs": "Force your opponent to skip their next turn"
 }
 
@@ -214,6 +214,39 @@ async def prf_advanced_challenge(ctx: commands.Context, player: discord.Member):
             if view.value:  # User chose Yes
                 await game.basic_game(ctx, True)
 
+rule = """
+- Two players engage in a gunfight (with support items available in advanced mode).\n
+- Details about support items can be found using `/item_info`.\n
+- Players take turns using items and shooting bullets.\n
+- Each player can use multiple items before shooting a bullet.\n
+- There are two types of bullets: :red_square: **RED** and :blue_square: **BLUE**.\n
+- Each player can decide to shoot themselves or their opponent.\n
+- The first player to reach 0 :heart: **LIFE** loses the duel.\n
+- Bullets are displayed at the beginning and randomized right after (and reloaded when needed).\n
+- A player shot with a :blue_square: **BLUE** bullet will not lose any :heart: **LIFE**.\n
+- A player shot with a :red_square: **RED** bullet will lose 1 :heart: **LIFE**.\n
+- If a player shoots themselves with a :blue_square: **BLUE** bullet, their turn will continue.
+"""
+
+
+@bot.tree.command()
+async def rules(interaction: discord.Interaction):
+    """Rules of the game"""
+    await interaction.response.send_message(embed=discord.Embed(
+        colour=discord.Colour.purple(),
+        title="Rules",
+        description=rule
+    ))
+
+
+@bot.command(name="rules")
+async def prf_rules(ctx: commands.Context):
+    """Rules of the game"""
+    await ctx.channel.send(embed=discord.Embed(
+        colour=discord.Colour.purple(),
+        title="Rules",
+        description=rule
+    ))
 
 # Run the bot
 bot.run(TOKEN)

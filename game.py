@@ -15,7 +15,7 @@ class Game:
         self.bullet_number = random.randint(2, 8)  # Number of bullets
         self.over = False  # State of the game
         self.item_info = {
-            "Expired Medicine": "Heal 2 LIFE or lose 1 LIFE but not more than your initial LIFE",
+            "Expired Medicine": "Heal 1 - 2 LIFE or lose 1 LIFE but not more than your initial LIFE",
             "Inverter": "Switch the color of all bullets",
             "Cigarette": "Heal 1 LIFE but not more than your initial LIFE",
             "Burner Phone": "Reveal the color of a random bullet",
@@ -263,22 +263,22 @@ class Game:
             if random.randint(0, 1):  # Heal hp
                 if random.randint(0, 1):  # Heal 2 hp
                     # Already at max hp
-                    result = f"**{player.profile.display_name}** is already at max :heart: LIFE."
+                    result = f"**{player.profile.display_name}** is already at max :heart: **LIFE**."
                     if player.lives < player.max_lives:  # But not more than the initial hp
                         if player.lives == player.max_lives - 1: 
                             player.lives += 1
-                            result = f"**{player.profile.display_name}** has gained 1 :heart: LIFE."
+                            result = f"**{player.profile.display_name}** has gained 1 :heart: **LIFE**."
                         else: 
                             player.lives += 2
-                            result = f"**{player.profile.display_name}** has gained 2 :heart: LIFE."
+                            result = f"**{player.profile.display_name}** has gained 2 :heart: **LIFE**."
                 else:  # Heal 1 hp
-                    result = f"**{player.profile.display_name}** is already at max :heart: LIFE"
+                    result = f"**{player.profile.display_name}** is already at max :heart: **LIFE**"
                     if player.lives < player.max_lives: 
                         player.lives += 1
-                        result = f"**{player.profile.display_name}** has gained 1 :heart: LIFE"
+                        result = f"**{player.profile.display_name}** has gained 1 :heart: **LIFE**"
             else:  # Lose hp
                 player.lives -= 1
-                result = f"**{player.profile.display_name}** has lost 1 :heart: LIFE"
+                result = f"**{player.profile.display_name}** has lost 1 :heart: **LIFE**"
                 if player.lives <= 0:  # If user dies
                     if isinstance(interaction_ctx, discord.Interaction):
                         await interaction_ctx.followup.send(embed=self.winner_display(opponent))
@@ -293,10 +293,10 @@ class Game:
                     self.gun[i] = "r"    
             result = "All bullets' colors are inverted."
         elif item == "Cigarette":
-            result = f"**{player.profile.display_name}** is already at max :heart: LIFE"
+            result = f"**{player.profile.display_name}** is already at max :heart: **LIFE**"
             if player.lives < player.max_lives: 
                 player.lives += 1
-                result = f"**{player.profile.display_name}** has gained 1 :heart: LIFE"
+                result = f"**{player.profile.display_name}** has gained 1 :heart: **LIFE**"
         elif item == "Burner Phone":
             index = random.randint(self.bullet_index, len(self.gun) - 1)
             color = ":red_square: **RED**" if self.gun[index] == "r" else ":blue_square: **BLUE**"

@@ -1,6 +1,6 @@
 # Buckshot Roulette Bot
 #### _Project #7_
-- A **_Discord_** bot that simulates the game play of the game **_Buckshot Roulette_** using **_discord.py_**
+- A **_Discord_** bot that simulates the gameplay of the game **_Buckshot Roulette_** using **_discord.py_**
 
 - The bot has 2 game modes, one with support items and one without support items
 
