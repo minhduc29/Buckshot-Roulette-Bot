@@ -31,10 +31,10 @@ class Player:
         cur_item = self.item_num()
         if cur_item >= 8:
             return
-        elif cur_item > 4:
+        elif cur_item > 5:
             num = 8 - cur_item
         else:
-            num = 4
+            num = 3
         for i in range(num):
             item = random.choice(list(self.items))
             self.items[item] += 1

@@ -217,14 +217,15 @@ async def prf_advanced_challenge(ctx: commands.Context, player: discord.Member):
 rule = """
 - Two players engage in a gunfight (with support items available in advanced mode).\n
 - Details about support items can be found using `/item_info`.\n
+- New items are randomly added to each player every time the gun is reloaded.\n
 - Players take turns using items and shooting bullets.\n
 - Each player can use multiple items before shooting a bullet.\n
+- Bullets are displayed at the beginning and randomized right after (and reloaded when needed).\n
 - There are two types of bullets: :red_square: **RED** and :blue_square: **BLUE**.\n
 - Each player can decide to shoot themselves or their opponent.\n
-- The first player to reach 0 :heart: **LIFE** loses the duel.\n
-- Bullets are displayed at the beginning and randomized right after (and reloaded when needed).\n
 - A player shot with a :blue_square: **BLUE** bullet will not lose any :heart: **LIFE**.\n
 - A player shot with a :red_square: **RED** bullet will lose 1 :heart: **LIFE**.\n
+- The first player to reach 0 :heart: **LIFE** loses the duel.\n
 - If a player shoots themselves with a :blue_square: **BLUE** bullet, their turn will continue.
 """
 
