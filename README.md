@@ -1,4 +1,4 @@
-# Duckshot-Bot
+# Buckshot-Roulette-Bot
 #### _Project #7_
 - A **_Discord_** bot that simulates the game play of the game **_Buckshot Roulette_** using **_discord.py_**
 

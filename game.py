@@ -127,7 +127,7 @@ class Game:
                     if view.selected else ""
 
                 await display_msg.edit(
-                    embed=self.round_display(bullet, view.shot_yourself, view.selected, item_description,
+                    embed=self.round_display(bullet, view.shot_yourself, view.selected, item_description, self.hand_saw,
                                              current_player, opponent),
                     view=None)  # Display the result of the round
                 await sleep(5)
@@ -138,9 +138,8 @@ class Game:
                 if view.shot_yourself:  # User chose to shoot himself
                     if bullet == 'r':  # If the bullet is red
                         current_player.lives -= 1  # User lost 1 life
-                        if self.hand_saw:
+                        if self.hand_saw:  # Double the damage
                             current_player.lives -= 1
-                            self.hand_saw = False
                         if current_player.lives <= 0:  # If user dies
                             if isinstance(interaction_ctx, discord.Interaction):
                                 await interaction_ctx.followup.send(embed=self.winner_display(opponent))
@@ -149,13 +148,11 @@ class Game:
                             self.over = True  # Game over
                         if not self.hand_cuffs:
                             self.change_turn()
-                    self.hand_cuffs = False                        
                 else:  # User chose to shoot their opponent
                     if bullet == 'r':
                         opponent.lives -= 1
                         if self.hand_saw:
                             opponent.lives -= 1
-                            self.hand_saw = False
                         if opponent.lives <= 0:
                             if isinstance(interaction_ctx, discord.Interaction):
                                 await interaction_ctx.followup.send(embed=self.winner_display(current_player))
@@ -164,8 +161,10 @@ class Game:
                             self.over = True
                     if not self.hand_cuffs:
                         self.change_turn()
-                    else:
-                        self.hand_cuffs = False
+
+                # These 2 are available only for 1 shooting turn
+                self.hand_cuffs = False
+                self.hand_saw = False
 
     def reload(self):
         """Reload the gun with a new set of bullets"""
@@ -203,7 +202,8 @@ class Game:
             description=bullet_str
         )
 
-    def round_display(self, bullet, shot_yourself, selected_item, item_result, player: Player, opponent: Player):
+    def round_display(self, bullet, shot_yourself, selected_item, item_result, hand_saw,
+                      player: Player, opponent: Player):
         """Create an embed to display the result of the round"""
         if selected_item:  # If user chose to use an item
             description = f"**{player.profile.display_name} used {selected_item}.**\n\n"
@@ -216,12 +216,13 @@ class Game:
 
         tobe = "is" if self.bullet_number == 1 else "are"  # Grammar
         if bullet == "r":  # If the bullet is red
+            dmg = 2 if hand_saw else 1
             if shot_yourself:  # If the player chose to shoot himself
                 title = "You shot yourself with a :red_square: RED bullet"
-                description = f"**{player.profile.display_name} lost 1 :heart: LIFE.**\n\n"
+                description = f"**{player.profile.display_name} lost {dmg} :heart: LIFE.**\n\n"
             else:
                 title = "You shot your opponent with a :red_square: RED bullet"
-                description = f"**{opponent.profile.display_name} lost 1 :heart: LIFE.**\n\n"
+                description = f"**{opponent.profile.display_name} lost {dmg} :heart: LIFE.**\n\n"
         else:
             if shot_yourself:
                 title = "You shot yourself with a :blue_square: BLUE bullet"
@@ -259,25 +260,31 @@ class Game:
         """Process the item selected by the player"""
         player.items[item] -= 1  # Remove that item after used
         if item == "Expired Medicine":
-            if random.randint(0, 1):
-                if random.randint(0, 1):
-                    if player.lives < player.max_lives:
+            if random.randint(0, 1):  # Heal hp
+                if random.randint(0, 1):  # Heal 2 hp
+                    # Already at max hp
+                    result = f"**{player.profile.display_name}** is already at max :heart: LIFE."
+                    if player.lives < player.max_lives:  # But not more than the initial hp
                         if player.lives == player.max_lives - 1: 
                             player.lives += 1
                             result = f"**{player.profile.display_name}** has gained 1 :heart: LIFE."
                         else: 
                             player.lives += 2
                             result = f"**{player.profile.display_name}** has gained 2 :heart: LIFE."
-                    else:
-                        result = f"**{player.profile.display_name}** is already at max :heart: LIFE."
-                else:
+                else:  # Heal 1 hp
                     result = f"**{player.profile.display_name}** is already at max :heart: LIFE"
                     if player.lives < player.max_lives: 
                         player.lives += 1
                         result = f"**{player.profile.display_name}** has gained 1 :heart: LIFE"
-            else: 
+            else:  # Lose hp
                 player.lives -= 1
                 result = f"**{player.profile.display_name}** has lost 1 :heart: LIFE"
+                if player.lives <= 0:  # If user dies
+                    if isinstance(interaction_ctx, discord.Interaction):
+                        await interaction_ctx.followup.send(embed=self.winner_display(opponent))
+                    else:
+                        await interaction_ctx.channel.send(embed=self.winner_display(opponent))
+                    self.over = True
         elif item == "Inverter":
             for i in range(len(self.gun)):
                 if self.gun[i] == "r":
@@ -291,9 +298,17 @@ class Game:
                 player.lives += 1
                 result = f"**{player.profile.display_name}** has gained 1 :heart: LIFE"
         elif item == "Burner Phone":
-            index = random.randint(self.bullet_index, len(self.gun))
+            index = random.randint(self.bullet_index, len(self.gun) - 1)
             color = ":red_square: **RED**" if self.gun[index] == "r" else ":blue_square: **BLUE**"
-            await player.profile.send(f"The {index}th bullet is {color}")
+            if index + 1 == 1:
+                ordinal = f"{index + 1}st"
+            elif index + 1 == 2:
+                ordinal = f"{index + 1}nd"
+            elif index + 1 == 3:
+                ordinal = f"{index + 1}rd"
+            else:
+                ordinal = f"{index + 1}th"
+            await player.profile.send(f"The {ordinal} bullet is {color}")
             result = f"**{player.profile.display_name}** knows the color of a random bullet."
         elif item == "Adrenaline":
             view = StealMenu(player.profile.id, self.item_info, opponent.items)
@@ -338,9 +353,17 @@ class Game:
             tobe = "is" if self.bullet_number == 1 else "are"
             result = f"A {color} bullet has been ejected.\n There {tobe} **{self.bullet_number}** bullet(s) left."
         elif item == "Hand Saw":
-            self.hand_saw = True
-            result = "The current bullet's damage is doubled."
+            if self.hand_saw:
+                player.items[item] += 1
+                result = f"You already used **{item}**."
+            else:
+                self.hand_saw = True
+                result = "The current bullet's damage is doubled."
         else:
-            self.hand_cuffs = True
-            result = f"Next turn is still **{player.profile.display_name}**'s turn."
+            if self.hand_cuffs:
+                player.items[item] += 1
+                result = f"You already used **{item}**."
+            else:
+                self.hand_cuffs = True
+                result = f"Next turn is still **{player.profile.display_name}**'s turn."
         return result

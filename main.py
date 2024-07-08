@@ -7,7 +7,7 @@ from config import TOKEN, GUILD_ID
 intents = discord.Intents.all()
 
 # Instance of your Discord bot in your server
-bot = DuckshotBot("!", intents, GUILD_ID)
+bot = BuckshotBot("!", intents, GUILD_ID)
 
 
 @bot.tree.command()
@@ -93,7 +93,7 @@ async def prf_challenge(ctx: commands.Context, player: discord.Member):
 # Item information for the 2 functions below
 item = {
     "Expired Medicine": "Heal 2 :heart: LIFE or lose 1 :heart: LIFE but not more than your initial LIFE",
-    "Inverter": "Switch the color of the bullet",
+    "Inverter": "Switch the color of all bullets",
     "Cigarette": "Heal 1 :heart: LIFE but not more than your initial LIFE",
     "Burner Phone": "Reveal the color of a random bullet",
     "Adrenaline": "Steal an item from your opponent",
